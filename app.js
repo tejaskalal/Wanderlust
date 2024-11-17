@@ -8,6 +8,7 @@ const ejsMate = require("ejs-mate");
 const wrapAsync = require("./utils/wrapAsync.js");
 const ExpressError = require("./utils/ExpressError.js");
 const{ listingSchema } = require("./schema.js");
+const Review = require("./models/review.js")
 
 
 
@@ -35,6 +36,17 @@ app.get("/" , (req , res)=>{
     res.send("Hi , I'am root");
 });
 
+
+const validateListing = (req , res , next)=>{
+    let {error}=  listingSchema.validate(req.body);
+   if(error){
+    let errMsg = error.details.map((el)=>el.message).join(",");
+    throw new ExpressError(400 , errMsg);
+   }else{
+    next();
+   }
+}
+
 //Index route
 app.get("/listings" , wrapAsync(async (req , res)=>{
      const allListings = await Listing.find({});
@@ -57,19 +69,10 @@ app.get("/listings/:id" , wrapAsync(async(req , res)=>{
 
 
 //Create Route
-app.post("/listings" , wrapAsync(async (req ,  res , next)=>{
-   let result =  listingSchema.validate(req.body);
-   console.log(result);
-   if(result.error){
-
-   }throw new ExpressError(400 , result.error);
-    // let listing = req.body.listing;
+app.post("/listings" , validateListing , wrapAsync(async (req ,  res , next)=>{
     const newListing = new Listing(req.body.listing);
     await  newListing.save();
-    //   console.log(listing);
     res.redirect("/listings");
-    
-    
 }));
 
 
@@ -83,10 +86,7 @@ app.get("/listings/:id/edit" , wrapAsync(async (req,res)=>{
 
 
 //Update Route
-app.put("/listings/:id" , wrapAsync(async(req , res)=>{
-    if(!req.body.listing){
-        throw new ExpressError(400, "send valid data for listing");
-    }
+app.put("/listings/:id" ,validateListing, wrapAsync(async(req , res)=>{
     let {id} = req.params;
    await Listing.findByIdAndUpdate(id , {...req.body.listing});
    res.redirect(`/listings/${id}`);
@@ -101,6 +101,20 @@ app.delete("/listings/:id" , wrapAsync(async (req , res)=>{
     res.redirect("/listings");
 }));
 
+//reviews
+//post route
+app.post("/listings/:id/reviews" , async (req , res)=>{
+    let listing = await Listing.findById(req.params.id);
+    let newReview = new Review(req.body.review);
+
+    listing.reviews.push(newReview);
+
+    await newReview.save();
+    await listing.save();
+
+    console.log("new review saved");
+    res.send("new review saved");
+});
 // app.get("/testListing" ,async (req , res)=>{
 //      let sampleListing = new Listing ({
 //         title :"My New Villa",
@@ -121,7 +135,7 @@ app.all("*" , (req , res , next)=>{
 })
 
 app.use((err , req , res , next)=>{
-    let {statusCode=500 , message="somoething went wrong!"} = err;
+    let { statusCode=500 , message="somoething went wrong!"} = err;
     res.render("error.ejs" , {message});
     // res.status(statusCode).send(message);
 })
