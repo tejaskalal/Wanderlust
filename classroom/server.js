@@ -34,7 +34,7 @@ app.get("/register" , (req , res)=>{
     req.session.name = name;
     // console.log(req.session.name);
     if(name==="anonymous"){
-        req.flash("error" , "user not registered")
+        req.flash("error" , "user not registered");
     }else{
         req.flash("success" , "user successfully registered");
     }

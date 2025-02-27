@@ -8,11 +8,9 @@ const listingSchema = new Schema({
             required : true,
     },
     description:String,
-    image:{type : String ,
-        default : "https://unsplash.com/photos/view-of-wooden-cabin-near-a-forest-AcLA1EsDT0s",
-           set : (v) =>v==="" ? "https://unsplash.com/photos/view-of-wooden-cabin-near-a-forest-AcLA1EsDT0s"
-            : v,
-    },
+    image:{
+        url: String,
+       filename: String,},
     price:Number,
     location:String ,
     country:String,
@@ -25,7 +23,19 @@ const listingSchema = new Schema({
     owner:{
         type:Schema.Types.ObjectId,
         ref:"User",
-    }
+    },
+   geometry:{
+    type: {
+        type: String, // Don't do `{ location: { type: String } }`
+        enum: ['Point'], // 'location.type' must be 'Point'
+        required: true
+      },
+      coordinates: {
+        type: [Number],
+        required: true
+      }
+   }
+
 });
 
 
